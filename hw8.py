@@ -14,18 +14,48 @@ import matplotlib.pyplot as plt
 crossover operation for genetic algorithm
 """
 def crossover(parent1, parent2):
+    k = random.randint(0,len(parent1)-1)
+
+    child1 = [0 for n in range(len(parent1))]
+    child2 = [0 for n in range(len(parent1))]
+
+    for i in range(len(parent1)):
+        if(i < k):
+            child1[i] = parent1[i]
+            child2[i] = parent2[i]
+        else:
+            child1[i] = parent2[i]
+            child2[i] = parent1[i]
+
     return (child1, child2)
 
 """
 mutation operation for genetic algorithm
 """
 def mutation(genome, mutRate):
+
+    for i in range(len(genome)):
+        k = random.random()
+        
+        if(k<mutRate):
+            genome[i] = 1-genome[i]
+
     return genome
 
 """
 selection operation for choosing a parent for mating from the population
 """
 def selection(pop):
+    k = random.random()
+
+    for i in range(len(pop)):
+        if(pop[i].accFit > k):
+            org = pop[i]
+            break
+
+        else:
+            org = pop[-1]
+
     return org
 
 """
@@ -79,6 +109,21 @@ def calcFit(org, xVals, yVals):
 accPop will calculate the fitness and accFit of the population
 """
 def accPop(pop, xVals, yVals):
+
+    sumFitness = 0
+    sumAccFit = 0
+
+    for i in range(len(pop)):
+        pop[i].fitness = calcFit(pop[i],xVals, yVals)
+        sumFitness += pop[i].fitness
+
+    pop.sort(reverse = True)
+
+    for i in range(len(pop)):
+        pop[i].normFit = pop[i].fitness/sumFitness
+        sumAccFit += pop[i].normFit
+        pop[i].accFit = sumAccFit
+
     return pop
 
 """
@@ -113,6 +158,27 @@ def initPop(size, numCoeffs):
 nextGeneration will create the next generation
 """
 def nextGeneration(pop, numCoeffs, mutRate, eliteNum):
+
+    newPop = []
+    numPairs = (len(pop)-eliteNum)//2
+
+    for i in range(numPairs):
+        parent1 = selection(pop)
+        parent2 = selection(pop)
+
+        child1 = Org.Organism(numCoeffs)
+        child2 = Org.Organism(numCoeffs)
+
+        child1.bits, child2.bits = crossover(parent1.bits, parent2.bits)
+        child1.bits = mutation(child1.bits, mutRate)
+        child2.bits = mutation(child2.bits, mutRate)
+
+        newPop.append(child1)
+        newPop.append(child2)
+
+    for j in range(eliteNum):
+        newPop.append(pop[j])
+
     return newPop
 
 """
@@ -134,6 +200,40 @@ best: the bestN number of best organisms seen over the course of the GA
 fit:  the highest observed fitness value for each iteration
 """
 def GA(k, size, numCoeffs, mutRate, xVals, yVals, eliteNum, bestN):
+
+    pop = initPop(size, numCoeffs)
+    pop = accPop(pop, xVals, yVals)
+
+    best = [0 for n in range(bestN)]
+    fit = [0 for n in range(k+1)]
+
+    for i in range(bestN):
+        best[i] = pop[i]
+
+    fit[0] = best[0].fitness
+
+    for i in range(1, k+1):
+        newPop = nextGeneration(pop, numCoeffs, mutRate, eliteNum)
+        newPop = accPop(newPop, xVals, yVals)
+
+        # Look at the top bestN organisms of this generation to see if we
+        # need to replace some or all of the best organisms seen so far.
+        for ind in range(bestN):
+            # First, make sure this individual is not already in the list.
+            inBest = False
+            for bOrg in best:
+                if bOrg.isClone(pop[ind]):
+                    inBest = True
+                    break
+
+            # Compare this individual to the worst of the best: best[-1].
+            if newPop[ind].fitness > best[-1].fitness and not inBest:
+                # Replace that individual and resort the list.
+                best[-1] = newPop[ind]
+                best.sort(reverse = True)
+
+            fit[i] = best[0].fitness
+
     return (best,fit)
 
 """
@@ -173,12 +273,34 @@ main function
 """
 if __name__ == '__main__':
 
+    # Testing
+
+    # Crossover
+
+    # parent1 = [0,1,0,0,1,1,0,1]
+    # parent2 = [1,1,1,0,1,0,1,1]
+
+    # child1, child2 = crossover(parent1, parent2)
+    # print(parent1)
+    # print(parent2)
+    # print(child1)
+    # print(child2)
+
+    # Mutation
+
+    # genome = mutation(parent1, 0.10)
+    # print(genome)
+
+    # Selection
+
+
+
     # Flags to suppress any given scenario. Simply set to False and that
     # scenario will be skipped.
     scenA = True
-    scenB = True
-    scenC = True
-    scenD = True
+    scenB = False
+    scenC = False
+    scenD = False
     
 ################################################################################
     ### Scenario A: Fitting to a constant function, y = 1. ###
