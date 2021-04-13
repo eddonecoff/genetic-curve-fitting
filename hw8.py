@@ -48,15 +48,25 @@ selection operation for choosing a parent for mating from the population
 def selection(pop):
     k = random.random()
 
+    end = True
     for i in range(len(pop)):
-        if(pop[i].accFit > k):
+        if(pop[i].fitness > k and end == True):
             org = pop[i]
+            end = False
             break
 
-        else:
-            org = pop[-1]
+    if(end == True):
+        org = pop[-1]
 
-    return org
+    # for i in range(len(pop)):
+    #     if(pop[i].accFit > k):
+    #         org = pop[i]
+    #         break
+
+    #     else:
+    #         org = pop[-1]
+    
+    return(org)
 
 """
 calcFit will calculate the fitness of an organism
@@ -169,7 +179,7 @@ def nextGeneration(pop, numCoeffs, mutRate, eliteNum):
         child1 = Org.Organism(numCoeffs)
         child2 = Org.Organism(numCoeffs)
 
-        child1.bits, child2.bits = crossover(parent1.bits, parent2.bits)
+        (child1.bits, child2.bits) = crossover(parent1.bits, parent2.bits)
         child1.bits = mutation(child1.bits, mutRate)
         child2.bits = mutation(child2.bits, mutRate)
 
@@ -212,8 +222,10 @@ def GA(k, size, numCoeffs, mutRate, xVals, yVals, eliteNum, bestN):
 
     fit[0] = best[0].fitness
 
+    newPop = pop
+
     for i in range(1, k+1):
-        newPop = nextGeneration(pop, numCoeffs, mutRate, eliteNum)
+        newPop = nextGeneration(newPop, numCoeffs, mutRate, eliteNum)
         newPop = accPop(newPop, xVals, yVals)
 
         # Look at the top bestN organisms of this generation to see if we
@@ -232,7 +244,7 @@ def GA(k, size, numCoeffs, mutRate, xVals, yVals, eliteNum, bestN):
                 best[-1] = newPop[ind]
                 best.sort(reverse = True)
 
-            fit[i] = best[0].fitness
+        fit[i] = best[0].fitness
 
     return (best,fit)
 
