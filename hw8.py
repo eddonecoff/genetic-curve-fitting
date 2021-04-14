@@ -1,8 +1,8 @@
 """
 hw8.py
-Name(s):
-NetId(s):
-Date:
+Name(s): Ethan Donecoff, Arvind Parthasarathy
+NetId(s): edd24, ap427
+Date: 04/13/2021
 """
 
 import math
@@ -12,13 +12,24 @@ import matplotlib.pyplot as plt
 
 """
 crossover operation for genetic algorithm
+
+INPUTS:
+parent1: the genome bit list of the first parent
+parent2: the genome bit list of the second parent
+
+OUTPUTS:
+child1: the genome bit list of the first child
+child2: the genome bit list of the second child
 """
 def crossover(parent1, parent2):
+    # Generate random index k to split parent genomes
     k = random.randint(0,len(parent1)-1)
 
+    # Preallocate children's bit lists
     child1 = [0 for n in range(len(parent1))]
     child2 = [0 for n in range(len(parent1))]
 
+    # Perform crossover; split parent genomes at k
     for i in range(len(parent1)):
         if(i < k):
             child1[i] = parent1[i]
@@ -31,9 +42,17 @@ def crossover(parent1, parent2):
 
 """
 mutation operation for genetic algorithm
+
+INPUTS:
+genome: bit list genome
+mutRate: a floating-point value in range (0,1) representing mutation rate
+
+OUTPUTS:
+genome: mutated bit list genome
 """
 def mutation(genome, mutRate):
 
+    # Iterate through genome and swap each bit with probability mutRate
     for i in range(len(genome)):
         k = random.random()
         
@@ -44,25 +63,25 @@ def mutation(genome, mutRate):
 
 """
 selection operation for choosing a parent for mating from the population
+
+INPUTS:
+pop: list of organism objects in descending order by fitness
+
+OUTPUTS:
+org: first organism with accFit greater than random number k; otherwise the
+     last organism in the population
 """
 def selection(pop):
     k = random.random()
 
-    # end = True
-    # for i in range(len(pop)):
-    #     if(pop[i].fitness > k and end == True):
-    #         org = pop[i]
-    #         end = False
-    #         break
-
-    # if(end == True):
-    #     org = pop[-1]
-
     for i in range(len(pop)):
+
+        # Return first organism with accFit greater than k
         if(pop[i].accFit > k):
             org = pop[i]
             break
 
+        # Otherwise, return last organism in the population
         else:
             org = pop[-1]
     
@@ -70,6 +89,14 @@ def selection(pop):
 
 """
 calcFit will calculate the fitness of an organism
+
+INPUTS:
+org: an Organism object
+xVals: list of x-values of the data
+yVals: list of y-values of the data
+
+OUTPUTS:
+fitness: the calculated fitness of the organism
 """
 def calcFit(org, xVals, yVals):
     # Create a variable to store the running sum error.
@@ -117,18 +144,30 @@ def calcFit(org, xVals, yVals):
 
 """
 accPop will calculate the fitness and accFit of the population
+
+INPUTS:
+pop: list of Organism objects without fitness
+xVals: list of x-values of the data
+yVals: list of y-values of the data
+
+OUTPUTS:
+pop: list of Organism objects with normFit and accFit calculated
 """
 def accPop(pop, xVals, yVals):
 
+    # Initialize counters
     sumFitness = 0
     sumAccFit = 0
 
+    # Calculate fitness for each organism, keep running sum of fitness
     for i in range(len(pop)):
         pop[i].fitness = calcFit(pop[i],xVals, yVals)
         sumFitness += pop[i].fitness
 
+    # Sort in decreasing order by fitness
     pop.sort(reverse = True)
 
+    # Calculate normFit and accFit for each organism
     for i in range(len(pop)):
         pop[i].normFit = pop[i].fitness/sumFitness
         sumAccFit += pop[i].normFit
@@ -138,6 +177,13 @@ def accPop(pop, xVals, yVals):
 
 """
 initPop will initialize a population of a given size and number of coefficients
+
+INPUTS:
+size: the size of the population
+numCoeffs: the number of coefficients for the polynomial
+
+OUTPUTS:
+pop: list of Organism objects
 """
 def initPop(size, numCoeffs):
     # Get size-4 random organisms in a list.
@@ -166,26 +212,44 @@ def initPop(size, numCoeffs):
 
 """
 nextGeneration will create the next generation
+
+INPUTS: 
+pop: sorted list of Organism objects with with fitness computed
+numCoeffs: the number of coefficients for the polynomial 
+mutRate: a floating-point value in range (0,1) representing mutation rate
+eliteNum: the number of elite individuals from the old population to be 
+          automatically placed in the next generation.
+
+OUTPUTS:
+newPop: a list of Organism objects representing the next generation of the 
+        population
 """
 def nextGeneration(pop, numCoeffs, mutRate, eliteNum):
 
+    # Create empty list and calculate number of pairs of children
     newPop = []
     numPairs = (len(pop)-eliteNum)//2
 
     for i in range(numPairs):
+
+        # Select two parents from population
         parent1 = selection(pop)
         parent2 = selection(pop)
 
+        # Create children genomes by crossover with parents and mutation
         (child1bits, child2bits) = crossover(parent1.bits, parent2.bits)
         child1bits = mutation(child1bits, mutRate)
         child2bits = mutation(child2bits, mutRate)
 
+        # Create Organism objects with children genomes
         child1 = Org.Organism(numCoeffs, child1bits)
         child2 = Org.Organism(numCoeffs, child2bits)
 
+        # Add children Organism objects to list newPop
         newPop.append(child1)
         newPop.append(child2)
 
+    # Add elite individual Organisms from previous generation
     for j in range(eliteNum):
         newPop.append(pop[j])
 
@@ -211,20 +275,26 @@ fit:  the highest observed fitness value for each iteration
 """
 def GA(k, size, numCoeffs, mutRate, xVals, yVals, eliteNum, bestN):
 
+    # Initialize population, calculate fitness, sort in descending order
     pop = initPop(size, numCoeffs)
     pop = accPop(pop, xVals, yVals)
 
+    # Preallocate best and fit lists
     best = [0 for n in range(bestN)]
     fit = [0 for n in range(k+1)]
 
+    # Start with best individuals from initial population
     for i in range(bestN):
         best[i] = pop[i]
 
+    # First best Organism from best list
     fit[0] = best[0].fitness
 
+    # Initialize newPop to prepare for next generations
     newPop = pop
 
     for i in range(1, k+1):
+        # Create next generation, calculate fitness, sort in descending order
         newPop = nextGeneration(newPop, numCoeffs, mutRate, eliteNum)
         newPop = accPop(newPop, xVals, yVals)
 
@@ -244,6 +314,7 @@ def GA(k, size, numCoeffs, mutRate, xVals, yVals, eliteNum, bestN):
                 best[-1] = newPop[ind]
                 best.sort(reverse = True)
 
+        # Store best individual from each generation
         fit[i] = best[0].fitness
 
     return (best,fit)
@@ -284,28 +355,6 @@ def runScenario(scenario, k, size, numCoeffs, mutRate, \
 main function
 """
 if __name__ == '__main__':
-
-    # Testing
-
-    # Crossover
-
-    # parent1 = [0,1,0,0,1,1,0,1]
-    # parent2 = [1,1,1,0,1,0,1,1]
-
-    # child1, child2 = crossover(parent1, parent2)
-    # print(parent1)
-    # print(parent2)
-    # print(child1)
-    # print(child2)
-
-    # Mutation
-
-    # genome = mutation(parent1, 0.10)
-    # print(genome)
-
-    # Selection
-
-
 
     # Flags to suppress any given scenario. Simply set to False and that
     # scenario will be skipped.
